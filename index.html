@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home - Notes</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --text-color: #333;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --primary: #007bff;
+            --danger: #dc3545;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #f4f4f9;
+            --card-bg: #1e1e1e;
+            --border-color: #333;
+            --primary: #bb86fc;
+            --danger: #cf6679;
+        }
+        body { background: var(--bg-color); color: var(--text-color); font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding-top: 40px; box-sizing: border-box; transition: 0.3s; }
+        .card { background: var(--card-bg); padding: 2rem; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid var(--border-color); width: 100%; max-width: 550px; text-align: center; }
+        h1 { margin-top: 0; }
+        .note-item { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 5px; padding: 15px; margin: 10px 0; text-align: left; }
+        input { margin: 10px 0; padding: 10px; width: 60%; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-color); }
+        button { padding: 10px 15px; border: none; border-radius: 4px; background: var(--primary); color: #fff; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        button:hover { opacity: 0.8; }
+        .btn-danger { background: var(--danger); margin-top: 20px; }
+        .theme-toggle { position: absolute; top: 20px; right: 20px; width: auto; background: transparent; color: var(--text-color); border: 1px solid var(--border-color); }
+        .input-group { display: flex; gap: 10px; justify-content: center; align-items: center; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌓 Toggle Theme</button>
+    <div class="card">
+        <h1>My Notes Dashboard</h1>
+        <p style="color: #666;">You are successfully signed in!</p>
+        
+        <div class="input-group">
+            <input type="text" id="userNote" placeholder="Write a new note here...">
+            <button id="saveNote" onclick="saveNote()">Save Note</button>
+        </div>
+
+        <div id="notes" style="margin-top: 20px;">
+            <p>Loading notes...</p>
+        </div>
+        
+        <button class="btn-danger" id="signout" onclick="signout()">Sign Out</button>
+    </div>
+    <script>
+        // Theme initialization
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+
+        async function saveNote() {
+            const noteInput = document.getElementById("userNote");
+            if(!noteInput.value.trim()) return;
+
+            try {
+                await axios.post("http://localhost:3000/notes", {
+                    note: noteInput.value
+                }, {
+                    headers: { token: localStorage.getItem("token") }
+                });
+                
+                // Add the note exactly to the UI right away
+                const noteDiv = document.createElement("div");
+                noteDiv.className = "note-item";
+                noteDiv.innerHTML = noteInput.value;
+                document.getElementById("notes").appendChild(noteDiv);
+
+                noteInput.value = "";
+            } catch (e) {
+                alert("Failed to save note");
+            }
+        }
+
+        async function getNotes() {
+            try {
+                const ress = await axios.get("http://localhost:3000/notes", {
+                    headers: { token: localStorage.getItem("token") }
+                });
+                
+                const notesContainer = document.getElementById("notes");
+                notesContainer.innerHTML = "";
+                
+                if(ress.data.notes.length === 0) {
+                    notesContainer.innerHTML = "<p style='color: gray; font-style: italic;'>No notes yet. Add one above!</p>";
+                }
+
+                for(let i = 0; i < ress.data.notes.length; i++) {
+                    const noteDiv = document.createElement("div");
+                    noteDiv.className = "note-item";
+                    noteDiv.innerHTML = ress.data.notes[i].note;
+                    notesContainer.appendChild(noteDiv);
+                }
+            } catch (e) {
+                if(e.response && e.response.status === 403) {
+                    signout(); // token probably expired or missing
+                } else {
+                    document.getElementById("notes").innerHTML = "<p>Failed to load notes.</p>";
+                }
+            }
+        }
+        
+        getNotes();
+
+        function signout() {
+            localStorage.removeItem("token");
+            window.location = '/signin';
+        }
+    </script>
+</body>
+</html>

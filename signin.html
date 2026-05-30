@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign In</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --text-color: #333;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --primary: #007bff;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #f4f4f9;
+            --card-bg: #1e1e1e;
+            --border-color: #333;
+            --primary: #bb86fc;
+        }
+        body { background: var(--bg-color); color: var(--text-color); font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; transition: 0.3s; }
+        .card { background: var(--card-bg); padding: 2rem; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid var(--border-color); text-align: center; }
+        input { display: block; margin: 10px auto; padding: 10px; width: 100%; max-width: 250px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-color); }
+        button { padding: 10px 20px; border: none; border-radius: 4px; background: var(--primary); color: #fff; cursor: pointer; transition: 0.3s; width: 100%; max-width: 270px; margin-top: 10px; font-weight: bold; }
+        button:hover { opacity: 0.8; }
+        .theme-toggle { position: absolute; top: 20px; right: 20px; width: auto; background: transparent; color: var(--text-color); border: 1px solid var(--border-color); }
+        a { color: var(--primary); text-decoration: none; }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌓 Toggle Theme</button>
+    <div class="card">
+        <h2>Sign In</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button id="signin" onclick="signin()">Sign In</button>
+        <div style="margin-top: 15px;">
+            Don't have an account? <a href="/signup">Sign Up</a>
+        </div>
+    </div>
+    <script>
+        // Theme initialization
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+
+        async function signin() {
+            try {
+                const ress = await axios.post("http://localhost:3000/signin", {
+                    username: document.getElementById("username").value,
+                    password: document.getElementById("password").value
+                })
+                localStorage.setItem("token", ress.data.token)
+                window.location = '/' 
+            } catch (e) {
+                alert('Sign in failed! Please check your credentials.');
+            }
+        }
+    </script>
+</body>
+</html>
